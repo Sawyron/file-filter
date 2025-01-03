@@ -5,7 +5,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -17,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class TokenBatchingReaderTest {
+class BatchingTokenReaderHandlerTest {
     private static class TestTokenSteamConsumer implements Consumer<Stream<String>> {
         final List<List<String>> bathes = new ArrayList<>();
 
@@ -36,21 +35,23 @@ class TokenBatchingReaderTest {
     @Spy
     private TestTokenSteamConsumer testTokenSteamConsumer;
 
+
     @Test
     void whenTokenCountModBatchSizeIsZero_thenConsumeNTimes() {
         int batchSize = 10;
         int n = 2;
-        var reader = new TokenBatchingReader(batchSize, testTokenSteamConsumer);
+        var reader = new BatchingTokenReaderHandler(batchSize, testTokenSteamConsumer);
         List<String> tokens = IntStream.range(0, batchSize * n)
                 .mapToObj(i -> "token_" + i)
                 .toList();
-        var byteArrayInputStream = new ByteArrayInputStream(String.join("\n", tokens).getBytes());
+        TestTokenReader tokenReaderSpy = spy(new TestTokenReader(tokens));
 
-        reader.readTokens(byteArrayInputStream);
+        reader.handleTokenReader(tokenReaderSpy);
 
         List<String> actualTokens = testTokenSteamConsumer.getAllTokens();
         assertAll(
                 () -> verify(testTokenSteamConsumer, times(n)).accept(any()),
+                () -> verify(tokenReaderSpy, times(tokens.size() + 1)).readToken(),
                 () -> assertEquals(n, testTokenSteamConsumer.bathes.size()),
                 () -> testTokenSteamConsumer.bathes.forEach(batch -> assertEquals(batchSize, batch.size())),
                 () -> assertIterableEquals(tokens, actualTokens)
@@ -62,17 +63,18 @@ class TokenBatchingReaderTest {
         int batchSize = 10;
         int n = 2;
         int remainder = 5;
-        var reader = new TokenBatchingReader(batchSize, testTokenSteamConsumer);
+        var reader = new BatchingTokenReaderHandler(batchSize, testTokenSteamConsumer);
         List<String> tokens = IntStream.range(0, batchSize * n + remainder % batchSize)
                 .mapToObj(i -> "token_" + i)
                 .toList();
-        var byteArrayInputStream = new ByteArrayInputStream(String.join("\n", tokens).getBytes());
+        TestTokenReader tokenReaderSpy = spy(new TestTokenReader(tokens));
 
-        reader.readTokens(byteArrayInputStream);
+        reader.handleTokenReader(tokenReaderSpy);
 
         List<String> actualTokens = testTokenSteamConsumer.getAllTokens();
         assertAll(
                 () -> verify(testTokenSteamConsumer, times(n + 1)).accept(any()),
+                () -> verify(tokenReaderSpy, times(tokens.size() + 1)).readToken(),
                 () -> assertEquals(n + 1, testTokenSteamConsumer.bathes.size()),
                 () -> testTokenSteamConsumer.bathes.stream()
                         .limit(n).forEach(batch -> assertEquals(batchSize, batch.size())),
@@ -83,13 +85,14 @@ class TokenBatchingReaderTest {
 
     @Test
     void whenNoTokens_thenDoNotInvokeConsumer() {
-        var reader = new TokenBatchingReader(10, testTokenSteamConsumer);
-        var byteArrayInputStream = new ByteArrayInputStream("".getBytes());
+        var reader = new BatchingTokenReaderHandler(10, testTokenSteamConsumer);
+        TestTokenReader tokenReaderSpy = spy(new TestTokenReader(List.of()));
 
-        reader.readTokens(byteArrayInputStream);
+        reader.handleTokenReader(tokenReaderSpy);
 
         assertAll(
                 () -> verify(testTokenSteamConsumer, never()).accept(any()),
+                () -> verify(tokenReaderSpy).readToken(),
                 () -> assertTrue(testTokenSteamConsumer.bathes.isEmpty())
         );
     }

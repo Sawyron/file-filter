@@ -1,14 +1,14 @@
 package org.sawyron.domain.filters;
 
 import org.sawyron.domain.exeptions.ExceptionHandler;
-import org.sawyron.domain.tokens.TokenBatchingReader;
-import org.sawyron.domain.tokens.TokenHandler;
+import org.sawyron.domain.tokens.*;
 import org.springframework.stereotype.Component;
 
-import java.io.InputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @Component
@@ -25,18 +25,27 @@ public class FileFilter {
 
     public void processFiles(Collection<Path> paths) {
         try (TokenHandler handler = tokenHandlerSupplier.get()) {
-            var tokenReader = new TokenBatchingReader(
+            var tokenReaderHandler = new BatchingTokenReaderHandler(
                     BATCH_SIZE,
                     tokens -> tokens.forEach(handler::handle)
             );
-            for (Path path : paths) {
-                try (InputStream fileInputSteam = Files.newInputStream(path)) {
-                    tokenReader.readTokens(fileInputSteam);
-                    System.out.printf("File processed: %s%n", path);
-                } catch (Exception e) {
-                    exceptionHandler.handle(e);
-                }
+            TokenReader tokenReader = new SequentialTokenReader(paths.stream()
+                    .map(this::createTokenReader)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .toList());
+            try (tokenReader) {
+                tokenReaderHandler.handleTokenReader(tokenReader);
             }
+        }
+    }
+
+    private Optional<TokenReader> createTokenReader(Path path) {
+        try {
+            return Optional.of(new BufferedTokenReader(Files.newBufferedReader(path)));
+        } catch (IOException e) {
+            exceptionHandler.handle(e);
+            return Optional.empty();
         }
     }
 }

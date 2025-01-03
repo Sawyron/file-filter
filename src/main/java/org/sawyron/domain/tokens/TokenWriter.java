@@ -3,6 +3,7 @@ package org.sawyron.domain.tokens;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 public abstract class TokenWriter implements Closeable {
     private BufferedWriter writer;
@@ -17,7 +18,7 @@ public abstract class TokenWriter implements Closeable {
             writer.write(token);
             writer.newLine();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 

@@ -1,9 +1,6 @@
 package org.sawyron.domain.tokens;
 
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.nio.file.Path;
 
 public class TokenFileWriter extends TokenWriter {
@@ -24,7 +21,7 @@ public class TokenFileWriter extends TokenWriter {
                     )
             );
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }
