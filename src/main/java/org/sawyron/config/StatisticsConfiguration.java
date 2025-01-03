@@ -40,6 +40,6 @@ public class StatisticsConfiguration {
     ) {
         return properties.isFull()
                 ? new StringStatisticsGatherer(new StringStatisticsRenderer())
-                : new CountStatisticsGatherer<>("Strings");
+                : new CountStatisticsGatherer<>("Strings:");
     }
 }
