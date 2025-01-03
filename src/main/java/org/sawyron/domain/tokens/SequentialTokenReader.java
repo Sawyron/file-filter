@@ -13,10 +13,10 @@ public class SequentialTokenReader implements TokenReader {
     @Override
     public Optional<String> readToken() {
         Optional<String> line;
-        var seen = new HashSet<Integer>(readers.size());
-        while ((line = readers.get(currentIndex).readToken()).isEmpty() && seen.size() < readers.size()) {
+        int seen = 0;
+        while ((line = readers.get(currentIndex).readToken()).isEmpty() && seen < readers.size()) {
             currentIndex++;
-            seen.add(currentIndex);
+            seen++;
             if (currentIndex >= readers.size()) {
                 currentIndex = 0;
             }
