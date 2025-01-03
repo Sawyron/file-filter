@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 
 @Component
 public class FileFilter {
-    public static final int BATCH_SIZE = 10_000;
+    private static final int BATCH_SIZE = 10_000;
 
     private final ExceptionHandler exceptionHandler;
     private final Supplier<TokenHandler> tokenHandlerSupplier;
