@@ -9,12 +9,12 @@ import java.util.regex.Pattern;
 
 @Component
 public class DoubleValueParser implements ValueParser<Double> {
-    final String Digits = "(\\p{Digit}+)";
-    final String HexDigits = "(\\p{XDigit}+)";
+    private final String Digits = "(\\p{Digit}+)";
+    private final String HexDigits = "(\\p{XDigit}+)";
     // an exponent is 'e' or 'E' followed by an optionally
     // signed decimal integer.
-    final String Exp = "[eE][+-]?" + Digits;
-    final String fpRegex =
+    private final String Exp = "[eE][+-]?" + Digits;
+    private final String fpRegex =
             ("[\\x00-\\x20]*" + // Optional leading "whitespace"
              "[+-]?(" +         // Optional sign character
              "NaN|" +           // "NaN" string
