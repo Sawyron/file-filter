@@ -12,6 +12,9 @@ public class SequentialTokenReader implements TokenReader {
 
     @Override
     public Optional<String> readToken() {
+        if (readers.isEmpty()) {
+            return Optional.empty();
+        }
         Optional<String> line;
         int seen = 0;
         while ((line = readers.get(currentIndex).readToken()).isEmpty() && seen < readers.size()) {

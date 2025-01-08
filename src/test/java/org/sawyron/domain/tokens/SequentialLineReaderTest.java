@@ -33,4 +33,17 @@ class SequentialLineReaderTest {
                 () -> verify(underTest).close()
         );
     }
+
+    @Test
+    void whenReadersIsEmpty_thenReturnEmptyResult() {
+        SequentialTokenReader underTest = spy(new SequentialTokenReader(List.of()));
+        Optional<String> actualTokenOptional;
+        try (underTest) {
+            actualTokenOptional = underTest.readToken();
+        }
+        assertAll(
+                () -> assertTrue(actualTokenOptional.isEmpty()),
+                () -> verify(underTest).close()
+        );
+    }
 }
